@@ -9,6 +9,22 @@ class Settings(BaseSettings):
     app_name: str = "examate-rag"
     environment: str = "local"  # local | ci | production
 
+    # LLM: any OpenAI-compatible API (OpenAI, Groq, OpenRouter, Gemini's OpenAI endpoint, ...)
+    llm_api_key: str = ""
+    llm_base_url: str = ""  # empty = the provider default (OpenAI)
+    llm_primary_model: str = ""
+    llm_fallback_model: str = ""  # optional; used when the primary model fails
+    llm_timeout_seconds: float = 30.0
+
+    # Price in USD per 1 million tokens. Leave at 0 for free tiers.
+    primary_input_price_per_m: float = 0.0
+    primary_output_price_per_m: float = 0.0
+    fallback_input_price_per_m: float = 0.0
+    fallback_output_price_per_m: float = 0.0
+
+    # Every model call is appended here as one JSON line. Empty string = keep in memory only.
+    usage_log_path: str = "logs/usage.jsonl"
+
 
 @lru_cache
 def get_settings() -> Settings:
