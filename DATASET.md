@@ -44,17 +44,25 @@ python tool/download.py
 
 `data/raw/` is listed in `.gitignore`, so it never gets committed.
 
+## What is included and excluded
+
+**Included**
+
+- All `.java` and `.scala` files in the repository, including test code. Tests show how the main code is used, so they are kept in the 6,528 files. Retrieval can filter by path (for example, skip `src/test`) when a question is about production code.
+
+**Excluded**
+
+- The top-level `tests/` folder (Kafka's system-test setup). It contains a test SSH key that GitHub's push protection blocks, and it has no Java or Scala files.
+- Build output, generated files, docs and scripts.
+
 ## Terms and attribution
 
 Apache Kafka is licensed under Apache-2.0, which allows use and redistribution with the licence and notices kept. StreamTrace is not affiliated with or endorsed by the Apache Software Foundation. Apache, Apache Kafka and Kafka are trademarks of the Apache Software Foundation.
 
-## Excluded
-
-- The top-level `tests/` folder (Kafka's system-test setup). It contains a test SSH key that GitHub's push protection blocks, and it has no Java or Scala files.
-- Build output, generated files, docs and scripts.
-- Test code under each module's `src/test` folder, at least at first.
-
 ## Notes
 
 - Line numbers change between Kafka releases, so the commit above is pinned. Citations in answers refer to that version.
-- The file count was taken from a local copy at that commit. Re-run the count on your own `data/raw/kafka` if you change the version.
+- The file count was taken from a copy at that commit. Re-run the count on your own `data/raw/kafka` if you change the version:
+  ```
+  Get-ChildItem data/raw/kafka -Recurse -Include *.java,*.scala | Measure-Object
+  ```
