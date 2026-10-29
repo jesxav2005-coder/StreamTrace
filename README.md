@@ -59,7 +59,9 @@ flowchart TD
 
 ## Hardest problem (my interview story)
 
-Cross-document comparison. A question like "what happens when a producer sends with acks=all" needs an answer stitched together from 4 to 6 files in different modules. StreamTrace must plan sub-questions, retrieve per module, and join the steps into one cited path.
+The hardest part is that no single file in Kafka explains how a request moves through the system. Take a question like "what happens when a producer sends with acks=all". The first steps are in the clients code, the broker handles the request in core, the message is written to disk in storage, and replication and acknowledgement involve more files after that. A normal search finds one or two of these files and misses the rest, so the answer is incomplete or wrong.
+
+My approach is to split the question into smaller ones, search the right module for each one, and then join the pieces into one numbered path. Every step has to point to a real file and line range, and I check in code that those lines exist, so the model cannot invent a citation. If the code does not contain the answer, StreamTrace says so instead of guessing. I will measure this on 60 cross-module questions against an answer key I write by hand.
 
 ## Dataset
 
@@ -96,3 +98,4 @@ curl localhost:8000/health
 ## Live link
 
 https://streamtrace-44tq.onrender.com
+
