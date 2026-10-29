@@ -2,6 +2,7 @@ from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.responses import RedirectResponse
 
 from app.config import Settings, get_settings
 from app.llm import LLMNotConfiguredError, LLMService, LLMUnavailableError
@@ -25,6 +26,12 @@ def get_llm() -> LLMService:
 
 LLMDep = Annotated[LLMService, Depends(get_llm)]
 TrackerDep = Annotated[UsageTracker, Depends(get_tracker)]
+
+
+@app.get("/", include_in_schema=False)
+def root() -> RedirectResponse:
+    """Send visitors who open the bare address to the interactive API docs."""
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/health")
