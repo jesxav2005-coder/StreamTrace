@@ -1,17 +1,28 @@
+# 10 real questions
 
-# 10 real questions my user will ask
+Questions an on-call engineer would ask about Apache Kafka. Questions 1 to 9 need steps from several modules, so no single file answers them. Question 10 cannot be answered from the source code, and StreamTrace should say so instead of guessing.
 
-Write them the way your user would type them. At least 3 must need more than one page to answer, and at least 1 must be a question your documents cannot answer.
+| # | Question | Modules likely involved |
+| - | -------- | ----------------------- |
+| 1 | Trace what happens inside the broker when a producer sends a batch with acks=all. | clients, core, storage |
+| 2 | Which code path triggers a consumer group rebalance when a member stops sending heartbeats? | clients, group-coordinator |
+| 3 | Where is log retention enforced, and what decides which segment gets deleted? | storage, core |
+| 4 | How does the producer client batch records and decide when to send them (batch size and linger time)? | clients |
+| 5 | How is a consumer fetch request served, from the request arriving at the broker to the response leaving? | clients, core, storage |
+| 6 | What happens when a partition leader fails, and how is a new leader chosen through KRaft? | raft, core |
+| 7 | How does the broker detect and drop duplicate records from an idempotent producer? | clients, core, storage |
+| 8 | Where are consumer offset commits handled, and where are they stored? | clients, group-coordinator |
+| 9 | When does a follower get removed from the in-sync replica set, and which code decides it? | core, server |
+| 10 | What is the monthly cost of running a three-broker Kafka cluster on AWS? | none (cannot be answered from the code) |
 
-| # | Question | Where the answer is (document, page) | Needs more than one page? |
-|---|---|---|---|
-| 1 | What happens inside Kafka when a producer sends a batch with acks=all? Which files handle the request from the producer client to the broker and disk? | KafkaProducer.java, Sender.java, KafkaApis.scala, ReplicaManager.scala, DelayedProduce.scala | Yes |
-| 2 | My Kafka consumer stopped sending heartbeats. Which code detects the timeout, and how does it trigger a consumer group rebalance? | AbstractCoordinator.java, ConsumerCoordinator.java, GroupCoordinatorService.java, GroupMetadataManager.java | Yes |
-| 3 | Kafka is deleting old messages from my topic. Where is log retention enforced, and how does Kafka decide which log segments to delete? | UnifiedLog.java, LocalLog.java, LogManager.java | Yes |
-| 4 | A Kafka broker suddenly crashes. How does Kafka recover its partition logs and restore broker state after restarting? | LogManager.java, UnifiedLog.java, ReplicaManager.scala | Yes |
-| 5 | My Kafka producer keeps retrying failed messages. Which functions handle retries, and how does Kafka decide when to stop retrying? | KafkaProducer.java, Sender.java, RecordAccumulator.java | Yes |
-| 6 | When a consumer commits an offset, which functions process the request, and where does Kafka store the committed offset? | KafkaConsumer.java, ConsumerCoordinator.java, GroupCoordinatorService.java, OffsetMetadataManager.java | Yes |
-| 7 | How does Kafka replicate messages from a leader partition to follower replicas, and which code tracks replication progress? | ReplicaManager.scala, Partition.scala, ReplicaFetcherThread.scala | Yes |
-| 8 | When I enable compression in a Kafka producer, where does Kafka compress the records, and how does the broker handle the compressed batch? | KafkaProducer.java, ProducerBatch.java, MemoryRecordsBuilder.java, LogValidator.java | Yes |
-| 9 | When a Kafka partition leader becomes unavailable, how does the KRaft controller elect a new leader and update the brokers? | QuorumController.java, ReplicationControlManager.java, BrokerHeartbeatManager.java | Yes |
-| 10 | What is the current CPU usage and available memory of our production Kafka broker in Chennai? | None - cannot be answered from the Apache Kafka source code. Requires live monitoring data such as Prometheus or Grafana. | No |
+## How these will be used
+
+- Questions 1 to 9 each get a hand-written answer key: the correct ordered steps, with file references.
+- StreamTrace's answer is scored on whether the step chain is complete and correct.
+- Question 10 checks that StreamTrace says "I don't know" when the code has no answer, instead of inventing one.
+- The 60-question evaluation set extends these 10.
+
+## Notes
+
+- The modules column is my first guess. Check it against the real code when you write the answer key.
+- Questions 1 to 3 come from the project card.
