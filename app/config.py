@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     fallback_input_price_per_m: float = 0.0
     fallback_output_price_per_m: float = 0.0
 
+    # Postgres with the pgvector extension, used for code search
+    database_url: str = ""
+    embedding_model: str = "gemini-embedding-001"
+    embedding_dimensions: int = 768  # pgvector indexes support up to 2,000 dimensions
+
     # Every model call is appended here as one JSON line. Empty string = keep in memory only.
     usage_log_path: str = "logs/usage.jsonl"
 
