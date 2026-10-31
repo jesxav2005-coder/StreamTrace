@@ -69,7 +69,7 @@ def test_embed_retries_when_rate_limited():
     vectors = embed_texts(client, ["a"], "m", 2, sleep=waits.append)
     assert len(vectors) == 1
     assert client.calls == 3
-    assert waits == [2, 4]
+    assert waits == [15, 30]
 
 
 def test_embed_gives_up_after_the_last_retry():
