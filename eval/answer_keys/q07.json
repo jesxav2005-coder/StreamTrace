@@ -1,0 +1,55 @@
+{
+  "id": "q07",
+  "question": "How does the broker detect and drop duplicate records from an idempotent producer?",
+  "modules": [
+    "clients",
+    "storage",
+    "core"
+  ],
+  "answerable": true,
+  "steps": [
+    {
+      "n": 1,
+      "file": "clients/src/main/java/org/apache/kafka/clients/producer/internals/RecordAccumulator.java",
+      "symbol": "drain",
+      "does": "assigns producer id, epoch and per-partition sequence once; retries keep the sequence"
+    },
+    {
+      "n": 2,
+      "file": "storage/src/main/java/org/apache/kafka/storage/internals/log/UnifiedLog.java",
+      "symbol": "append",
+      "does": "batch reaches the log via the produce path"
+    },
+    {
+      "n": 3,
+      "file": "storage/src/main/java/org/apache/kafka/storage/internals/log/UnifiedLog.java",
+      "symbol": "analyzeAndValidateProducerState",
+      "does": "for client appends looks up the producer's last entry"
+    },
+    {
+      "n": 4,
+      "file": "storage/src/main/java/org/apache/kafka/storage/internals/log/ProducerStateEntry.java",
+      "symbol": "findDuplicateBatch",
+      "does": "duplicate if epoch matches and first/last sequence exactly match one of the last 5 cached batches"
+    },
+    {
+      "n": 5,
+      "file": "storage/src/main/java/org/apache/kafka/storage/internals/log/UnifiedLog.java",
+      "symbol": "append",
+      "does": "on duplicate skips localLog.append and returns the original offsets from cached BatchMetadata"
+    },
+    {
+      "n": 6,
+      "file": "storage/src/main/java/org/apache/kafka/storage/internals/log/ProducerAppendInfo.java",
+      "symbol": "checkSequence",
+      "does": "non-duplicates are validated; gaps raise OutOfOrderSequenceException"
+    },
+    {
+      "n": 7,
+      "file": "storage/src/main/java/org/apache/kafka/storage/internals/log/ProducerStateManager.java",
+      "symbol": "update",
+      "does": "after append, caches batch metadata for future dedup"
+    }
+  ],
+  "verified_against": "apache/kafka ab3e73c (4.5.0-SNAPSHOT)"
+}

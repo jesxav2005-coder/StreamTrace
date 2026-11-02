@@ -1,0 +1,66 @@
+{
+  "id": "q02",
+  "question": "Which code path triggers a consumer group rebalance when a member stops sending heartbeats?",
+  "modules": [
+    "group-coordinator",
+    "clients"
+  ],
+  "answerable": true,
+  "steps": [
+    {
+      "n": 1,
+      "file": "clients/src/main/java/org/apache/kafka/clients/consumer/internals/AbstractCoordinator.java",
+      "symbol": "HeartbeatThread",
+      "does": "classic client heartbeat sender (new consumer uses HeartbeatRequestManager)"
+    },
+    {
+      "n": 2,
+      "file": "group-coordinator/src/main/java/org/apache/kafka/coordinator/group/GroupCoordinatorService.java",
+      "symbol": "heartbeat",
+      "does": "routes the heartbeat to the group coordinator"
+    },
+    {
+      "n": 3,
+      "file": "group-coordinator/src/main/java/org/apache/kafka/coordinator/group/GroupMetadataManager.java",
+      "symbol": "rescheduleClassicGroupMemberHeartbeat",
+      "does": "each heartbeat resets the member session timer"
+    },
+    {
+      "n": 4,
+      "file": "group-coordinator/src/main/java/org/apache/kafka/coordinator/group/GroupMetadataManager.java",
+      "symbol": "expireClassicGroupMemberHeartbeat",
+      "does": "timer fires when no heartbeat arrives within session timeout"
+    },
+    {
+      "n": 5,
+      "file": "group-coordinator/src/main/java/org/apache/kafka/coordinator/group/GroupMetadataManager.java",
+      "symbol": "removeMemberAndUpdateClassicGroup",
+      "does": "removes member, then maybePrepareRebalanceOrCompleteJoin -> prepareRebalance"
+    },
+    {
+      "n": 6,
+      "file": "group-coordinator/src/main/java/org/apache/kafka/coordinator/group/GroupMetadataManager.java",
+      "symbol": "completeClassicGroupJoin",
+      "does": "remaining members rejoin; join phase completes; syncGroup assigns partitions"
+    },
+    {
+      "n": 7,
+      "file": "group-coordinator/src/main/java/org/apache/kafka/coordinator/group/GroupMetadataManager.java",
+      "symbol": "scheduleConsumerGroupSessionTimeout",
+      "does": "new protocol alternative: session timer re-armed on each consumerGroupHeartbeat"
+    },
+    {
+      "n": 8,
+      "file": "group-coordinator/src/main/java/org/apache/kafka/coordinator/group/GroupMetadataManager.java",
+      "symbol": "consumerGroupFenceMemberOperation",
+      "does": "new protocol: expiry fences the member"
+    },
+    {
+      "n": 9,
+      "file": "group-coordinator/src/main/java/org/apache/kafka/coordinator/group/GroupMetadataManager.java",
+      "symbol": "consumerGroupFenceMembers",
+      "does": "new protocol: removes member and bumps group epoch; others reconcile on next heartbeat"
+    }
+  ],
+  "verified_against": "apache/kafka ab3e73c (4.5.0-SNAPSHOT)"
+}

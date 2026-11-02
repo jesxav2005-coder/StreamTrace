@@ -1,0 +1,60 @@
+{
+  "id": "q03",
+  "question": "Where is log retention enforced, and what decides which segment gets deleted?",
+  "modules": [
+    "storage",
+    "core"
+  ],
+  "answerable": true,
+  "steps": [
+    {
+      "n": 1,
+      "file": "storage/src/main/java/org/apache/kafka/storage/internals/log/LogManager.java",
+      "symbol": "startup",
+      "does": "schedules the kafka-log-retention task"
+    },
+    {
+      "n": 2,
+      "file": "storage/src/main/java/org/apache/kafka/storage/internals/log/LogManager.java",
+      "symbol": "cleanupLogs",
+      "does": "selects non-compacted logs and calls deleteOldSegments on each"
+    },
+    {
+      "n": 3,
+      "file": "storage/src/main/java/org/apache/kafka/storage/internals/log/UnifiedLog.java",
+      "symbol": "deleteOldSegments",
+      "does": "sums log-start-offset, retention-size and retention-ms breach deletions"
+    },
+    {
+      "n": 4,
+      "file": "storage/src/main/java/org/apache/kafka/storage/internals/log/UnifiedLog.java",
+      "symbol": "deleteRetentionMsBreachedSegments",
+      "does": "deletable if now - largestTimestamp > retention.ms (lastModified if timestamp is in the future)"
+    },
+    {
+      "n": 5,
+      "file": "storage/src/main/java/org/apache/kafka/storage/internals/log/UnifiedLog.java",
+      "symbol": "deleteRetentionSizeBreachedSegments",
+      "does": "deletable while excess over retention.bytes is at least the segment size"
+    },
+    {
+      "n": 6,
+      "file": "storage/src/main/java/org/apache/kafka/storage/internals/log/UnifiedLog.java",
+      "symbol": "deletableSegments",
+      "does": "oldest-first walk; stops at first non-deletable; requires HW >= next segment base offset"
+    },
+    {
+      "n": 7,
+      "file": "storage/src/main/java/org/apache/kafka/storage/internals/log/UnifiedLog.java",
+      "symbol": "deleteSegments",
+      "does": "rolls a new active segment if needed, then removes segments"
+    },
+    {
+      "n": 8,
+      "file": "storage/src/main/java/org/apache/kafka/storage/internals/log/LocalLog.java",
+      "symbol": "deleteSegmentFiles",
+      "does": "renames to .deleted and deletes asynchronously after file.delete.delay.ms"
+    }
+  ],
+  "verified_against": "apache/kafka ab3e73c (4.5.0-SNAPSHOT)"
+}

@@ -1,0 +1,55 @@
+{
+  "id": "q09",
+  "question": "When does a follower get removed from the in-sync replica set, and which code decides it?",
+  "modules": [
+    "core",
+    "server",
+    "metadata"
+  ],
+  "answerable": true,
+  "steps": [
+    {
+      "n": 1,
+      "file": "core/src/main/scala/kafka/server/ReplicaManager.scala",
+      "symbol": "maybeShrinkIsr",
+      "does": "isr-expiration task runs every replica.lag.time.max.ms / 2"
+    },
+    {
+      "n": 2,
+      "file": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "symbol": "maybeShrinkIsr",
+      "does": "skips if an ISR update is in flight; asks getOutOfSyncReplicas"
+    },
+    {
+      "n": 3,
+      "file": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "symbol": "isFollowerOutOfSync",
+      "does": "out of sync if replica unknown or not caught up"
+    },
+    {
+      "n": 4,
+      "file": "server/src/main/java/org/apache/kafka/server/replica/ReplicaState.java",
+      "symbol": "isCaughtUp",
+      "does": "caught up if leaderEndOffset == LEO or now - lastCaughtUpTimeMs <= replica.lag.time.max.ms"
+    },
+    {
+      "n": 5,
+      "file": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "symbol": "submitAlterPartition",
+      "does": "proposes the shrunk ISR"
+    },
+    {
+      "n": 6,
+      "file": "server/src/main/java/org/apache/kafka/server/partition/DefaultAlterPartitionManager.java",
+      "symbol": "submit",
+      "does": "sends AlterPartition to the controller"
+    },
+    {
+      "n": 7,
+      "file": "metadata/src/main/java/org/apache/kafka/controller/ReplicationControlManager.java",
+      "symbol": "alterPartition",
+      "does": "controller validates and records the new ISR"
+    }
+  ],
+  "verified_against": "apache/kafka ab3e73c (4.5.0-SNAPSHOT)"
+}

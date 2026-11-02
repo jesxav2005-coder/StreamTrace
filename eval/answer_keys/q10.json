@@ -1,0 +1,11 @@
+{
+  "id": "q10",
+  "question": "What is the monthly cost of running a three-broker Kafka cluster on AWS?",
+  "modules": [
+    "none"
+  ],
+  "answerable": false,
+  "steps": [],
+  "expected_behavior": "Say the source code cannot answer this. Name what cost depends on (instance type, storage, throughput and retention, cross-AZ traffic, region). Give no dollar figure.",
+  "verified_against": "apache/kafka ab3e73c (4.5.0-SNAPSHOT)"
+}

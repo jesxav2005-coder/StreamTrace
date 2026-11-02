@@ -1,0 +1,68 @@
+{
+  "id": "q05",
+  "question": "How is a consumer fetch request served, from the request arriving at the broker to the response leaving?",
+  "modules": [
+    "clients",
+    "core",
+    "storage",
+    "server"
+  ],
+  "answerable": true,
+  "steps": [
+    {
+      "n": 1,
+      "file": "core/src/main/scala/kafka/network/SocketServer.scala",
+      "symbol": "Processor",
+      "does": "reads the request; RequestChannel and KafkaRequestHandler hand it to KafkaApis"
+    },
+    {
+      "n": 2,
+      "file": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "symbol": "handleFetchRequest",
+      "does": "fetch session context, authorization, calls replicaManager.fetchMessages"
+    },
+    {
+      "n": 3,
+      "file": "core/src/main/scala/kafka/server/ReplicaManager.scala",
+      "symbol": "fetchMessages",
+      "does": "reads log; responds now or parks a DelayedFetch"
+    },
+    {
+      "n": 4,
+      "file": "core/src/main/scala/kafka/server/ReplicaManager.scala",
+      "symbol": "readFromLog",
+      "does": "per-partition read via Partition.fetchRecords"
+    },
+    {
+      "n": 5,
+      "file": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "symbol": "fetchRecords",
+      "does": "epoch and divergence checks, fetch isolation, then readRecords"
+    },
+    {
+      "n": 6,
+      "file": "storage/src/main/java/org/apache/kafka/storage/internals/log/UnifiedLog.java",
+      "symbol": "read",
+      "does": "finds segment and reads"
+    },
+    {
+      "n": 7,
+      "file": "storage/src/main/java/org/apache/kafka/storage/internals/log/LogSegment.java",
+      "symbol": "read",
+      "does": "translates offset via index and returns a FileRecords slice"
+    },
+    {
+      "n": 8,
+      "file": "server/src/main/java/org/apache/kafka/server/purgatory/DelayedFetch.java",
+      "symbol": "tryComplete",
+      "does": "waits for minBytes or fetch.max.wait.ms; onComplete re-reads via readFromLogByPurgatory"
+    },
+    {
+      "n": 9,
+      "file": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "symbol": "handleFetchRequest",
+      "does": "processResponseCallback applies quotas and sends FetchResponse through RequestChannel"
+    }
+  ],
+  "verified_against": "apache/kafka ab3e73c (4.5.0-SNAPSHOT)"
+}

@@ -1,0 +1,53 @@
+{
+  "id": "q04",
+  "question": "How does the producer client batch records and decide when to send them (batch size and linger time)?",
+  "modules": [
+    "clients"
+  ],
+  "answerable": true,
+  "steps": [
+    {
+      "n": 1,
+      "file": "clients/src/main/java/org/apache/kafka/clients/producer/KafkaProducer.java",
+      "symbol": "doSend",
+      "does": "serializes, picks partition, calls accumulator.append"
+    },
+    {
+      "n": 2,
+      "file": "clients/src/main/java/org/apache/kafka/clients/producer/internals/RecordAccumulator.java",
+      "symbol": "append",
+      "does": "tries last batch, else allocates a new one"
+    },
+    {
+      "n": 3,
+      "file": "clients/src/main/java/org/apache/kafka/clients/producer/internals/ProducerBatch.java",
+      "symbol": "tryAppend",
+      "does": "returns null when the batch has no room"
+    },
+    {
+      "n": 4,
+      "file": "clients/src/main/java/org/apache/kafka/clients/producer/internals/RecordAccumulator.java",
+      "symbol": "batchReady",
+      "does": "sendable if full, linger expired, exhausted, closed, flushing or txn completing; held back while a retry is backing off"
+    },
+    {
+      "n": 5,
+      "file": "clients/src/main/java/org/apache/kafka/clients/producer/internals/Sender.java",
+      "symbol": "sendProducerData",
+      "does": "calls accumulator.ready then drain"
+    },
+    {
+      "n": 6,
+      "file": "clients/src/main/java/org/apache/kafka/clients/producer/internals/Sender.java",
+      "symbol": "sendProduceRequests",
+      "does": "groups drained batches by broker"
+    },
+    {
+      "n": 7,
+      "file": "clients/src/main/java/org/apache/kafka/clients/producer/internals/Sender.java",
+      "symbol": "sendProduceRequest",
+      "does": "sends one request per broker"
+    }
+  ],
+  "verified_against": "apache/kafka ab3e73c (4.5.0-SNAPSHOT)"
+}

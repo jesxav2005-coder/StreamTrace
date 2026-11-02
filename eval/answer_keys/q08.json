@@ -1,0 +1,62 @@
+{
+  "id": "q08",
+  "question": "Where are consumer offset commits handled, and where are they stored?",
+  "modules": [
+    "clients",
+    "group-coordinator",
+    "coordinator-common",
+    "core"
+  ],
+  "answerable": true,
+  "steps": [
+    {
+      "n": 1,
+      "file": "clients/src/main/java/org/apache/kafka/clients/consumer/internals/ConsumerCoordinator.java",
+      "symbol": "sendOffsetCommitRequest",
+      "does": "classic client commit (new consumer uses CommitRequestManager)"
+    },
+    {
+      "n": 2,
+      "file": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "symbol": "handleOffsetCommitRequest",
+      "does": "calls groupCoordinator.commitOffsets"
+    },
+    {
+      "n": 3,
+      "file": "group-coordinator/src/main/java/org/apache/kafka/coordinator/group/GroupCoordinatorService.java",
+      "symbol": "commitOffsets",
+      "does": "scheduleWriteOperation on the __consumer_offsets partition from partitionFor(groupId)"
+    },
+    {
+      "n": 4,
+      "file": "group-coordinator/src/main/java/org/apache/kafka/coordinator/group/GroupCoordinatorShard.java",
+      "symbol": "commitOffset",
+      "does": "delegates to OffsetMetadataManager"
+    },
+    {
+      "n": 5,
+      "file": "group-coordinator/src/main/java/org/apache/kafka/coordinator/group/OffsetMetadataManager.java",
+      "symbol": "commitOffset",
+      "does": "validates group/member/generation and builds offset commit records"
+    },
+    {
+      "n": 6,
+      "file": "coordinator-common/src/main/java/org/apache/kafka/coordinator/common/runtime/CoordinatorRuntime.java",
+      "symbol": "scheduleWriteOperation",
+      "does": "appends records and holds response in a deferred event until HW passes the write"
+    },
+    {
+      "n": 7,
+      "file": "core/src/main/scala/kafka/coordinator/group/CoordinatorPartitionWriter.scala",
+      "symbol": "append",
+      "does": "writes to the __consumer_offsets log via ReplicaManager (requiredAcks=1)"
+    },
+    {
+      "n": 8,
+      "file": "group-coordinator/src/main/java/org/apache/kafka/coordinator/group/OffsetMetadataManager.java",
+      "symbol": "replay",
+      "does": "applies committed records to in-memory OffsetsByGroup; storage is the compacted __consumer_offsets topic"
+    }
+  ],
+  "verified_against": "apache/kafka ab3e73c (4.5.0-SNAPSHOT)"
+}

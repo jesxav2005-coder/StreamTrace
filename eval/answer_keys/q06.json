@@ -1,0 +1,67 @@
+{
+  "id": "q06",
+  "question": "What happens when a partition leader fails, and how is a new leader chosen through KRaft?",
+  "modules": [
+    "metadata",
+    "raft",
+    "core"
+  ],
+  "answerable": true,
+  "steps": [
+    {
+      "n": 1,
+      "file": "metadata/src/main/java/org/apache/kafka/controller/ReplicationControlManager.java",
+      "symbol": "maybeFenceOneStaleBroker",
+      "does": "active controller fences a broker whose session timed out"
+    },
+    {
+      "n": 2,
+      "file": "metadata/src/main/java/org/apache/kafka/controller/ReplicationControlManager.java",
+      "symbol": "handleBrokerFenced",
+      "does": "triggers leader and ISR updates for the broker's partitions"
+    },
+    {
+      "n": 3,
+      "file": "metadata/src/main/java/org/apache/kafka/controller/PartitionChangeBuilder.java",
+      "symbol": "electLeader",
+      "does": "prefers preferred replica; leader must be acceptable and in ISR (or ELR if ISR empty)"
+    },
+    {
+      "n": 4,
+      "file": "metadata/src/main/java/org/apache/kafka/controller/QuorumController.java",
+      "symbol": "handleCommit",
+      "does": "records appended via raftClient.prepareAppend and applied once committed"
+    },
+    {
+      "n": 5,
+      "file": "raft/src/main/java/org/apache/kafka/raft/KafkaRaftClient.java",
+      "symbol": "onUpdateLeaderHighWatermark",
+      "does": "quorum HW advances once a majority has the PartitionChangeRecord"
+    },
+    {
+      "n": 6,
+      "file": "core/src/main/scala/kafka/server/metadata/BrokerMetadataPublisher.scala",
+      "symbol": "onMetadataUpdate",
+      "does": "brokers receive the committed metadata delta"
+    },
+    {
+      "n": 7,
+      "file": "core/src/main/scala/kafka/server/ReplicaManager.scala",
+      "symbol": "applyLocalLeadersDelta",
+      "does": "applies leader/follower changes for local partitions"
+    },
+    {
+      "n": 8,
+      "file": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "symbol": "makeLeader",
+      "does": "new leader takes over with bumped leader epoch"
+    },
+    {
+      "n": 9,
+      "file": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "symbol": "makeFollower",
+      "does": "other replicas truncate and fetch from the new leader"
+    }
+  ],
+  "verified_against": "apache/kafka ab3e73c (4.5.0-SNAPSHOT)"
+}

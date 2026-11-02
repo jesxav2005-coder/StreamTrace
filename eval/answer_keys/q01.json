@@ -1,0 +1,86 @@
+{
+  "id": "q01",
+  "question": "Trace what happens inside the broker when a producer sends a batch with acks=all.",
+  "modules": [
+    "clients",
+    "core",
+    "storage",
+    "server"
+  ],
+  "answerable": true,
+  "steps": [
+    {
+      "n": 1,
+      "file": "clients/src/main/java/org/apache/kafka/clients/producer/internals/Sender.java",
+      "symbol": "sendProduceRequest",
+      "does": "client sends ProduceRequest with acks=-1"
+    },
+    {
+      "n": 2,
+      "file": "core/src/main/scala/kafka/network/SocketServer.scala",
+      "symbol": "Processor",
+      "does": "network thread reads the request; RequestChannel queues it; KafkaRequestHandler picks it up"
+    },
+    {
+      "n": 3,
+      "file": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "symbol": "handleProduceRequest",
+      "does": "authorizes and validates, then calls replicaManager.handleProduceAppend"
+    },
+    {
+      "n": 4,
+      "file": "core/src/main/scala/kafka/server/ReplicaManager.scala",
+      "symbol": "handleProduceAppend",
+      "does": "verifies transaction state, then appendRecords -> appendRecordsToLeader -> appendToLocalLog"
+    },
+    {
+      "n": 5,
+      "file": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "symbol": "appendRecordsToLeader",
+      "does": "throws NotEnoughReplicasException if ISR < min.insync.replicas when acks=-1"
+    },
+    {
+      "n": 6,
+      "file": "storage/src/main/java/org/apache/kafka/storage/internals/log/UnifiedLog.java",
+      "symbol": "appendAsLeader",
+      "does": "validates, assigns offsets, rolls segment, checks producer state, appends to local log"
+    },
+    {
+      "n": 7,
+      "file": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "symbol": "maybeIncrementLeaderHW",
+      "does": "HW cannot pass the slowest ISR follower, so it does not advance yet"
+    },
+    {
+      "n": 8,
+      "file": "core/src/main/scala/kafka/server/ReplicaManager.scala",
+      "symbol": "maybeAddDelayedProduce",
+      "does": "parks a DelayedProduce in delayedProducePurgatory keyed by partition"
+    },
+    {
+      "n": 9,
+      "file": "server/src/main/java/org/apache/kafka/server/purgatory/DelayedProduce.java",
+      "symbol": "tryComplete",
+      "does": "completes when Partition.checkEnoughReplicasReachOffset is true (HW >= required offset)"
+    },
+    {
+      "n": 10,
+      "file": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "symbol": "updateFollowerFetchState",
+      "does": "follower fetch updates its LEO, may expand ISR, advances HW"
+    },
+    {
+      "n": 11,
+      "file": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "symbol": "tryCompleteDelayedRequests",
+      "does": "HW change re-checks delayed produce operations"
+    },
+    {
+      "n": 12,
+      "file": "server/src/main/java/org/apache/kafka/server/purgatory/DelayedProduce.java",
+      "symbol": "onComplete",
+      "does": "invokes response callback; KafkaApis sends response; on timeout pending partitions get REQUEST_TIMED_OUT"
+    }
+  ],
+  "verified_against": "apache/kafka ab3e73c (4.5.0-SNAPSHOT)"
+}
