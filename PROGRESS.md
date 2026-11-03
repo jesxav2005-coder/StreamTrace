@@ -1,31 +1,35 @@
 # Progress
 
-Commit after every class. Tag every Friday: `git tag week-N && git push origin week-N`.
+## Week 1: project card and README
+- Chose the project: StreamTrace, which follows a message through Apache Kafka's code across many modules.
+- README written in the template's section order (problem, who it is for, signature feature, hardest problem, dataset, 10 real questions, run it, live link).
+- Repo created from the GenAI starter template, with a live link on Render.
 
-## Week 1 (tag week-1 by Fri 23 Oct)
-- [ ] Repo created from the Examate template and registered on the form
-- [ ] README top section filled from my project card
-- [ ] /health runs locally
-- [ ] docs/QUESTIONS.md: 10 real questions
-- [ ] 50+ pages collected, DATASET.md filled, sample in data/sample/
-- [ ] Tag week-1 pushed
+## Week 2: FastAPI app and CI
+- FastAPI app with `/health`, `/chat` (primary model with a fallback model) and `/usage` (token and cost log).
+- Tests and GitHub Actions CI (ruff and pytest) in place.
+- Questions and a first set of answer keys written.
 
-## Week 2 (tag week-2 by Fri 30 Oct)
-- [ ] POST /chat calls an LLM and returns structured JSON
-- [ ] Streaming, timeouts, retry and a fallback model
-- [ ] Cost log + GET /usage
-- [ ] Docker Compose (API + Postgres/pgvector) runs
-- [ ] CI green, live link in README
-- [ ] Tag week-2 pushed
+## Week 3: ingestion, search and planner
 
-## Week 3 (tag week-3 by Fri 6 Nov)
-- [ ] Parser keeps page numbers and headings
-- [ ] 500+ pages chunked, embedded and stored in pgvector
-- [ ] POST /ask answers with [document, page] citations
-- [ ] docs/EVAL_v0.md with my 10 questions scored
-- [ ] Tag week-3 pushed
+**Done**
+- Chunker splits each Java and Scala file into chunks of about 60 lines that overlap by 10. It skips Kafka's licence header, but line numbers still count from the top of the file, so citations stay correct.
+- Embeddings use `gemini-embedding-001` (768 dimensions) through an OpenAI-compatible client, with waits and retries when the API is rate limited.
+- Chunks are stored in Postgres with pgvector (Docker, port 5433). `python -m app.ingest` is safe to stop and rerun, because it skips files that are already stored.
+- Endpoints: `/search` (closest chunks with file and line citations), `/ask` (one search, then a cited step list) and `/trace` (planner splits the question into sub-questions, searches each one, then writes one cited path).
+- 35 tests pass and CI is green.
+- Answer keys for 10 questions are in `eval/answer_keys/`.
 
-## Daily log
-| Date | What I did today | Commit |
-|---|---|---|
-| | | |
+**Numbers so far**
+- Stored: 414 files and 1,965 chunks (clients 208 files, core 67, storage 139).
+- A single broad question ("what happens with acks=all") returned mostly the right files once `ReplicaManager.scala` and `KafkaApis.scala` were stored, but it missed the log write and the replication wait. That is why the planner exists.
+
+**Problems found**
+- The Gemini free tier allows 30,000 embedding tokens per minute and 1,000 requests per day, so ingestion takes several days. The ingest code now waits out the per-minute limit.
+- Gemini sometimes leaves the embedding `index` empty, which crashed sorting. Fixed.
+- The Docker database container stops when the computer restarts. Restart it with `docker start streamtrace-db`.
+
+**Next**
+- Reach 500+ files, then run the 10 questions through `/trace` and fill in `EVAL_v0.md`.
+- Check that citations point to real file and line ranges.
+- Add the raft and coordinator modules once the quota allows.
