@@ -91,11 +91,34 @@ Multi-hop accuracy: 80%+ of 60 cross-module questions answered with a complete a
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
 cp .env.example .env                                 # Windows: copy .env.example .env
-uvicorn app.main:app --reload
-curl localhost:8000/health
 ```
+
+Start Postgres with pgvector (Docker Desktop must be running). Choose your own password, letters and numbers only:
+
+```
+docker run -d --name streamtrace-db -e POSTGRES_PASSWORD=your-password -p 5433:5432 pgvector/pgvector:pg16
+docker exec -it streamtrace-db psql -U postgres -c "CREATE EXTENSION IF NOT EXISTS vector;"
+```
+
+Fill in `.env` (never commit it): `DATABASE_URL=postgresql://postgres:your-password@localhost:5433/postgres`, plus `LLM_API_KEY`, `LLM_BASE_URL` and `LLM_PRIMARY_MODEL`.
+
+Download the Kafka source into `data/raw/kafka`, then index it. The free Gemini tier is slow, so start small. The command skips files it has already stored, so it is safe to rerun:
+
+```
+python -m app.ingest --dry-run --modules core storage
+python -m app.ingest --modules core storage clients --max-files 120
+```
+
+Start the API and open the docs page:
+
+```
+uvicorn app.main:app --reload
+```
+
+Open http://127.0.0.1:8000/docs and try `POST /trace`. See [DESIGN.md](DESIGN.md) for the endpoints.
 
 ## Live link
 
 https://streamtrace-44tq.onrender.com
 
+The hosted app shows `/health` and `/chat` only. Search needs the local database.
