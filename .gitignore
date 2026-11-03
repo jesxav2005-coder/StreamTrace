@@ -8,4 +8,4 @@ logs/
 *.sqlite
 .DS_Store
 data/raw/
-datas/
+datas/gen_keys.py

@@ -1,4 +1,5 @@
 """Polite downloader: python tools/download.py urls.txt urls.txt: one URL per line (lines starting with # are skipped). Saves files to data/raw/ and logs every file to data/manifest.csv."""
+
 import csv
 import hashlib
 import os
@@ -15,6 +16,8 @@ MANIFEST = "data/manifest.csv"
 HEADERS = {"User-Agent": "ExamateStudentProject/1.0 (learning project; contact: your-email@example.com)"}
 DELAY = 2  # seconds between requests: be polite to government servers
 robots = {}
+
+
 def allowed(url):
     root = "{0.scheme}://{0.netloc}".format(urlparse(url))
     if root not in robots:
@@ -26,9 +29,12 @@ def allowed(url):
         robots[root] = rp
         rp = robots[root]
         return rp is None or rp.can_fetch(HEADERS["User-Agent"], url)
+
+
 def name_for(url):
     name = os.path.basename(urlparse(url).path) or "index.html"
     return name.replace(" ", "_")
+
 
 def main(list_file):
     os.makedirs(RAW, exist_ok=True)
@@ -39,13 +45,7 @@ def main(list_file):
         log = csv.writer(mf)
 
         if new_manifest:
-            log.writerow([
-                "file",
-                "source_url",
-                "downloaded_on",
-                "bytes",
-                "sha256"
-            ])
+            log.writerow(["file", "source_url", "downloaded_on", "bytes", "sha256"])
 
         with open(list_file) as fh:
             urls = [u.strip() for u in fh]
@@ -64,11 +64,7 @@ def main(list_file):
                 print("BLOCKED by robots.txt, not downloading:", url)
                 continue
 
-            r = requests.get(
-                url,
-                headers=HEADERS,
-                timeout=30
-            )
+            r = requests.get(url, headers=HEADERS, timeout=30)
 
             if r.status_code != 200:
                 print("failed", r.status_code, url)
@@ -79,13 +75,7 @@ def main(list_file):
 
             digest = hashlib.sha256(r.content).hexdigest()[:16]
 
-            log.writerow([
-                path,
-                url,
-                date.today().isoformat(),
-                len(r.content),
-                digest
-            ])
+            log.writerow([path, url, date.today().isoformat(), len(r.content), digest])
 
             print("saved", path, len(r.content), "bytes")
 

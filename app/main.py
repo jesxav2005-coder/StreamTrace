@@ -9,11 +9,12 @@ from pydantic import BaseModel, Field
 
 from app.config import Settings, get_settings
 from app.llm import LLMNotConfiguredError, LLMService, LLMUnavailableError
+from app.planner import plan_and_retrieve
 from app.retrieval import retrieve
 from app.schemas import ChatRequest, ChatResponse, UsageResponse
 from app.usage import UsageTracker
 
-app = FastAPI(title="StreamTrace", version="0.3.0")
+app = FastAPI(title="StreamTrace", version="0.4.0")
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 
@@ -63,6 +64,14 @@ class SearchResponse(BaseModel):
 
 class AskResponse(BaseModel):
     question: str
+    answer: str
+    model: str
+    sources: list[Source]
+
+
+class TraceResponse(BaseModel):
+    question: str
+    plan: list[str]
     answer: str
     model: str
     sources: list[Source]
@@ -144,6 +153,41 @@ def ask(body: SearchRequest, settings: SettingsDep, llm: LLMDep) -> AskResponse:
     except LLMUnavailableError as exc:
         raise HTTPException(status_code=502, detail="All configured models failed.") from exc
     return AskResponse(question=body.question, answer=result.text, model=result.model, sources=sources)
+
+
+@app.post("/trace", response_model=TraceResponse)
+def trace(body: SearchRequest, settings: SettingsDep, llm: LLMDep) -> TraceResponse:
+    """Split the question into steps, search for each, then write one cited path."""
+    try:
+        steps, rows = plan_and_retrieve(body.question, settings, llm)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except openai.RateLimitError as exc:
+        raise HTTPException(status_code=429, detail="Embedding quota used up. Try again later.") from exc
+    except (openai.APIError, psycopg.Error) as exc:
+        raise HTTPException(status_code=503, detail="Search is unavailable right now.") from exc
+    except LLMNotConfiguredError as exc:
+        raise HTTPException(status_code=503, detail="LLM is not configured.") from exc
+    except LLMUnavailableError as exc:
+        raise HTTPException(status_code=502, detail="All configured models failed.") from exc
+    sources = to_sources(rows)
+    if not sources:
+        raise HTTPException(status_code=404, detail="No code has been ingested yet.")
+    excerpts = "\n\n".join(f"[{s.n}] {s.citation}\n{s.content}" for s in sources)
+    prompt = f"Question: {body.question}\n\nCode excerpts:\n\n{excerpts}"
+    try:
+        result = llm.complete(prompt, system=ASK_SYSTEM_PROMPT)
+    except LLMNotConfiguredError as exc:
+        raise HTTPException(status_code=503, detail="LLM is not configured.") from exc
+    except LLMUnavailableError as exc:
+        raise HTTPException(status_code=502, detail="All configured models failed.") from exc
+    return TraceResponse(
+        question=body.question,
+        plan=[s["question"] for s in steps],
+        answer=result.text,
+        model=result.model,
+        sources=sources,
+    )
 
 
 @app.get("/usage", response_model=UsageResponse)
