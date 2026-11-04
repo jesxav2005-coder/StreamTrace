@@ -1,7 +1,8 @@
-﻿import sys
-sys.path.insert(0, ".")
-import json
+﻿import json
+import sys
 from pathlib import Path
+
+sys.path.insert(0, ".")
 
 from app import db
 from app.config import get_settings
