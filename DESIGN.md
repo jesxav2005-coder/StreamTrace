@@ -27,7 +27,7 @@ Week 3 adds the code index and search: Kafka source files are split into chunks,
 | POST | /chat | Send a prompt to the primary model, fall back to the second model if it fails. |
 | POST | /search | Embed the question and return the closest code chunks with file and line citations. |
 | POST | /ask | One search, then the LLM writes a cited step list from the chunks found. |
-| POST | /trace | Plan sub-questions, search for each, merge the chunks, then write one cited step list. |
+| POST | /trace | Splits a question into 3 to 5 search questions, searches each, and returns a numbered answer with sources (`n`, `file_path`, `start_line`, `end_line`, `score`). |
 | GET | /usage | Totals for calls, tokens and cost, plus the most recent calls. |
 
 ### GET /health
