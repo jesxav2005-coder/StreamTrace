@@ -1,0 +1,121 @@
+{
+  "id": "q04",
+  "status": 200,
+  "question": "How does the producer client batch records and decide when to send them (batch size and linger time)?",
+  "wanted": 4,
+  "found": 0,
+  "missing": [
+    "KafkaProducer.java",
+    "ProducerBatch.java",
+    "RecordAccumulator.java",
+    "Sender.java"
+  ],
+  "invalid_citations": [],
+  "plan": [
+    "How are records buffered and grouped into batches in the producer client?",
+    "Where is the `batch.size` configuration used to determine if a batch is ready to be sent?",
+    "How does the `linger.ms` configuration influence the timing of sending incomplete batches?",
+    "What component is responsible for collecting ready batches and sending them over the network?"
+  ],
+  "answer": "Based on the provided code excerpts, there is no information about how the *producer client* batches records or decides when to send them (batch size and linger time). All the excerpts relate to consumer client fetching/acknowledgement, admin client operations, or general client configurations/networking that do not specifically detail producer-side batching logic.",
+  "sources": [
+    {
+      "n": 1,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/admin/internals/DescribeProducersHandler.java",
+      "start_line": 17,
+      "end_line": 74,
+      "score": 0.6541065638352344
+    },
+    {
+      "n": 2,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/consumer/internals/ShareFetch.java",
+      "start_line": 17,
+      "end_line": 75,
+      "score": 0.6479462593246318
+    },
+    {
+      "n": 3,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/consumer/internals/Acknowledgements.java",
+      "start_line": 193,
+      "end_line": 247,
+      "score": 0.6472098118785999
+    },
+    {
+      "n": 4,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/consumer/internals/Acknowledgements.java",
+      "start_line": 275,
+      "end_line": 331,
+      "score": 0.6468629979913422
+    },
+    {
+      "n": 5,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/consumer/internals/metrics/AsyncConsumerMetrics.java",
+      "start_line": 107,
+      "end_line": 164,
+      "score": 0.6331723337445934
+    },
+    {
+      "n": 6,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/CommonClientConfigs.java",
+      "start_line": 113,
+      "end_line": 172,
+      "score": 0.6302167384278065
+    },
+    {
+      "n": 7,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/consumer/ConsumerConfig.java",
+      "start_line": 198,
+      "end_line": 257,
+      "score": 0.6264388109887697
+    },
+    {
+      "n": 8,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/admin/internals/AdminApiDriver.java",
+      "start_line": 17,
+      "end_line": 76,
+      "score": 0.625329531088153
+    },
+    {
+      "n": 9,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/consumer/internals/CommitRequestManager.java",
+      "start_line": 1409,
+      "end_line": 1466,
+      "score": 0.6402311427592957
+    },
+    {
+      "n": 10,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/consumer/internals/ConsumerNetworkClient.java",
+      "start_line": 101,
+      "end_line": 157,
+      "score": 0.6396644276920099
+    },
+    {
+      "n": 11,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/admin/KafkaAdminClient.java",
+      "start_line": 1340,
+      "end_line": 1399,
+      "score": 0.6128444540257927
+    },
+    {
+      "n": 12,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/consumer/internals/Fetcher.java",
+      "start_line": 17,
+      "end_line": 64,
+      "score": 0.6101718855916092
+    },
+    {
+      "n": 13,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/consumer/internals/Fetcher.java",
+      "start_line": 55,
+      "end_line": 114,
+      "score": 0.6011268670099305
+    },
+    {
+      "n": 14,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/consumer/internals/NetworkClientDelegate.java",
+      "start_line": 17,
+      "end_line": 67,
+      "score": 0.5994790663107021
+    }
+  ]
+}

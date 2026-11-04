@@ -1,0 +1,122 @@
+{
+  "id": "q07",
+  "status": 200,
+  "question": "How does the broker detect and drop duplicate records from an idempotent producer?",
+  "wanted": 5,
+  "found": 0,
+  "missing": [
+    "ProducerAppendInfo.java",
+    "ProducerStateEntry.java",
+    "ProducerStateManager.java",
+    "RecordAccumulator.java",
+    "UnifiedLog.java"
+  ],
+  "invalid_citations": [],
+  "plan": [
+    "How does the broker parse incoming ProduceRequests to identify idempotent requests and extract fields like ProducerId, ProducerEpoch, and sequence numbers?",
+    "Where does the broker maintain the in-memory state for idempotent producers, including ProducerId, ProducerEpoch, and the last written sequence number per partition?",
+    "What is the specific logic within the broker for comparing incoming record sequence numbers with the stored producer state to detect duplicate or out-of-order records?",
+    "How does the broker handle records identified as duplicates from an idempotent producer, specifically the mechanism for dropping them or preventing their appending to the log?"
+  ],
+  "answer": "Here's how the broker detects and drops duplicate records from an idempotent producer based on the provided code excerpts:\n\n1.  **Producer Initialization:** An idempotent producer begins by sending an `InitProducerIdRequest` to a broker. This request can optionally include a `transactionalId` or implicitly requires `IDEMPOTENT_WRITE` authorization. [3], [4]\n2.  **Producer ID and Epoch Assignment:** The broker's `KafkaApis` handles this request. After verifying `IDEMPOTENT_WRITE` authorization, it delegates the management of producer state to the `TransactionCoordinator`. The `TransactionCoordinator` then uses its `TransactionStateManager` to process the `InitProducerIdRequest`, managing the `producerId` and `producerEpoch` which are essential for maintaining idempotent guarantees. [3], [4], [6]\n3.  **Record Production:** When the idempotent producer sends records, these records are contained within `MemoryRecords` as part of a `ProduceRequest` received by the `KafkaApis`. [1]\n4.  **Log Append and Verification:** The `KafkaApis` then forwards these records to the `ReplicaManager`, which attempts to append them to the local log using its `appendToLocalLog` method. This method includes `verificationGuards` and `transactionVersion` as part of its parameters. [13]\n5.  **Duplicate Detection and Exclusion:** During the `appendToLocalLog` process, the broker utilizes the `verificationGuards` to perform checks. If these checks indicate a violation of idempotent guarantees (e.g., an invalid `producerEpoch` is detected), the operation may result in an `InvalidProducerEpochException`. While the precise method for comparing sequence numbers to identify duplicates is not detailed in the excerpts, the occurrence of this exception and the presence of `verificationGuards` imply that the broker validates the incoming records against the known state of the producer for that partition. Records that fail these verification checks are not appended to the log, effectively dropping the duplicates. [13]",
+  "sources": [
+    {
+      "n": 1,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 394,
+      "end_line": 453,
+      "score": 0.7002710765784873
+    },
+    {
+      "n": 2,
+      "file_path": "core/src/main/scala/kafka/server/LocalLeaderEndPoint.scala",
+      "start_line": 17,
+      "end_line": 75,
+      "score": 0.6804306385840331
+    },
+    {
+      "n": 3,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 1656,
+      "end_line": 1715,
+      "score": 0.6778834891901033
+    },
+    {
+      "n": 4,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 1612,
+      "end_line": 1665,
+      "score": 0.6734330199480499
+    },
+    {
+      "n": 5,
+      "file_path": "core/src/main/java/kafka/server/TierStateMachine.java",
+      "start_line": 17,
+      "end_line": 73,
+      "score": 0.6723749605293611
+    },
+    {
+      "n": 6,
+      "file_path": "core/src/main/scala/kafka/coordinator/transaction/TransactionStateManager.scala",
+      "start_line": 17,
+      "end_line": 76,
+      "score": 0.6692438005951611
+    },
+    {
+      "n": 7,
+      "file_path": "core/src/main/scala/kafka/server/KafkaBroker.scala",
+      "start_line": 17,
+      "end_line": 76,
+      "score": 0.6681712129720917
+    },
+    {
+      "n": 8,
+      "file_path": "core/src/main/scala/kafka/coordinator/transaction/TransactionCoordinator.scala",
+      "start_line": 1023,
+      "end_line": 1078,
+      "score": 0.6661745493061878
+    },
+    {
+      "n": 9,
+      "file_path": "core/src/main/java/kafka/server/share/SharePartition.java",
+      "start_line": 3133,
+      "end_line": 3186,
+      "score": 0.6393764234712334
+    },
+    {
+      "n": 10,
+      "file_path": "core/src/main/java/kafka/server/share/SharePartition.java",
+      "start_line": 2007,
+      "end_line": 2054,
+      "score": 0.6381362660016994
+    },
+    {
+      "n": 11,
+      "file_path": "core/src/main/java/kafka/server/share/SharePartition.java",
+      "start_line": 1289,
+      "end_line": 1345,
+      "score": 0.6310139496886952
+    },
+    {
+      "n": 12,
+      "file_path": "core/src/main/scala/kafka/coordinator/transaction/TransactionMarkerChannelManager.scala",
+      "start_line": 289,
+      "end_line": 348,
+      "score": 0.6349624185882802
+    },
+    {
+      "n": 13,
+      "file_path": "core/src/main/scala/kafka/server/ReplicaManager.scala",
+      "start_line": 1335,
+      "end_line": 1394,
+      "score": 0.6339975074584238
+    },
+    {
+      "n": 14,
+      "file_path": "core/src/main/scala/kafka/coordinator/transaction/TransactionMarkerChannelManager.scala",
+      "start_line": 156,
+      "end_line": 208,
+      "score": 0.6321304066690392
+    }
+  ]
+}

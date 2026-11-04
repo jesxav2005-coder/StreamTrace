@@ -1,0 +1,96 @@
+{
+  "id": "q03",
+  "status": 200,
+  "question": "Where is log retention enforced, and what decides which segment gets deleted?",
+  "wanted": 3,
+  "found": 2,
+  "missing": [
+    "LogManager.java"
+  ],
+  "invalid_citations": [],
+  "plan": [
+    "Where is the log retention cleanup process initiated or scheduled within the broker?",
+    "What class or methods implement the logic to evaluate log segments against retention policies (time, size, etc.) and select which ones are candidates for deletion?",
+    "What specific methods are responsible for physically deleting the identified log segment files from disk?"
+  ],
+  "answer": "Here's how log retention is enforced and what decides which segments get deleted in Apache Kafka, based on the provided code excerpts:\n\n1.  **Where Retention is Enforced (Local Logs)**\n    For local log segments, log retention is primarily enforced by the `UnifiedLog` class. The `UnifiedLog.deleteOldSegments()` method is responsible for initiating the deletion process based on configured policies [7, 10]. The `LogManager`, which is created during the broker's startup, manages these `UnifiedLog` instances [3, 4].\n\n2.  **Where Retention is Enforced (Remote Logs)**\n    For remote log segments, log retention is enforced by the `RemoteLogManager`. This manager contains specific methods to determine if segments have breached retention policies [5]. The `RemoteLogManager` is also configured during the broker's startup [3, 4].\n\n3.  **What Decides Segment Deletion (Local Logs - General Criteria)**\n    For local logs, the `UnifiedLog` decides which segments to delete based on the following conditions [7, 10]:\n    *   **Log Start Offset Breach**: Segments are deleted if their `baseOffset()` is less than or equal to the `logStartOffset` (or `localLogStartOffset` if remote logging is enabled), meaning they are older than the earliest offset retained for the log [7].\n    *   **Retention Size Breach**: Segments are deleted if the total log size exceeds a configured `retentionSize`. The method iterates through the oldest segments, marking them for deletion until the log size is within the limit [7].\n    *   **Retention Time Breach**: Segments are deleted if their largest message timestamp (`segment.largestTimestamp()`) is older than the configured `retentionMs` [7].\n\n4.  **What Decides Segment Deletion (Local Logs - Policy-Specific Execution)**\n    The execution of these deletion criteria for local logs depends on the topic's `cleanup.policy`, managed within `UnifiedLog.deleteOldSegments()`:\n    *   If `cleanup.policy` is `delete`, segments are subject to deletion based on log start offset, retention size, and retention time [10].\n    *   If `cleanup.policy` is `compact`, only segments breaching the log start offset are deleted by this mechanism. Log compaction (removing obsolete records within segments) is handled separately by the `LogCleaner` [6, 8, 10].\n    *   If `cleanup.policy` is empty and remote storage is enabled, local segments are cleaned based on log start offset, retention size, and retention time. If remote storage is disabled, only log start offset breaches are considered for deletion [10].\n\n5.  **What Decides Segment Deletion (Remote Logs)**\n    For remote log segments, the `RemoteLogManager` makes deletion decisions based on similar criteria [5]:\n    *   **Retention Size Breach**: A segment is deleted if its size contributes to exceeding the `retentionSize` for the remote log [5].\n    *   **Retention Time Breach**: A segment is deleted if its `maxTimestampMs()` (the largest timestamp within the segment) is older than a calculated `cleanupUntilMs` (derived from the retention time) [5].\n    *   **Log Start Offset Breach**: A segment is deleted if all its `segmentLeaderEpochs` are older than or equal to the first epoch in the `leaderEpochEntries` and its `endOffset()` is less than the global `logStartOffset` [5].\n\n6.  **Physical Deletion of Segments**\n    Once segments are identified for deletion by either `UnifiedLog` or `RemoteLogManager`, they are physically removed from the filesystem using low-level operations such as `LogSegment.deleteIfExists()` [11] and `LocalLog.removeAndDeleteSegments()` [10].\n\n**Missing Information:**\nThe provided code excerpts do not explicitly show the scheduling mechanism that triggers the `UnifiedLog.deleteOldSegments()` method or the `RemoteLogManager`'s retention enforcement routines at regular intervals. While `LogManager` is initialized with a `kafkaScheduler` [3], the specific calls to schedule these retention tasks are not included.",
+  "sources": [
+    {
+      "n": 1,
+      "file_path": "core/src/main/scala/kafka/server/KafkaBroker.scala",
+      "start_line": 17,
+      "end_line": 76,
+      "score": 0.6595416859527888
+    },
+    {
+      "n": 2,
+      "file_path": "core/src/main/scala/kafka/server/ReplicaManager.scala",
+      "start_line": 258,
+      "end_line": 313,
+      "score": 0.6540773856624945
+    },
+    {
+      "n": 3,
+      "file_path": "core/src/main/scala/kafka/server/BrokerServer.scala",
+      "start_line": 205,
+      "end_line": 254,
+      "score": 0.6505706675268786
+    },
+    {
+      "n": 4,
+      "file_path": "core/src/main/scala/kafka/server/KafkaBroker.scala",
+      "start_line": 67,
+      "end_line": 124,
+      "score": 0.6472416492701375
+    },
+    {
+      "n": 5,
+      "file_path": "storage/src/main/java/org/apache/kafka/server/log/remote/storage/RemoteLogManager.java",
+      "start_line": 1299,
+      "end_line": 1352,
+      "score": 0.7392663782817017
+    },
+    {
+      "n": 6,
+      "file_path": "storage/src/main/java/org/apache/kafka/storage/internals/log/LogCleaner.java",
+      "start_line": 67,
+      "end_line": 125,
+      "score": 0.7315768335378816
+    },
+    {
+      "n": 7,
+      "file_path": "storage/src/main/java/org/apache/kafka/storage/internals/log/UnifiedLog.java",
+      "start_line": 2045,
+      "end_line": 2102,
+      "score": 0.7289007414104495
+    },
+    {
+      "n": 8,
+      "file_path": "storage/src/main/java/org/apache/kafka/storage/internals/log/LogCleaner.java",
+      "start_line": 17,
+      "end_line": 76,
+      "score": 0.7252896146520155
+    },
+    {
+      "n": 9,
+      "file_path": "storage/src/main/java/org/apache/kafka/storage/internals/log/LocalLog.java",
+      "start_line": 328,
+      "end_line": 377,
+      "score": 0.7010698622173412
+    },
+    {
+      "n": 10,
+      "file_path": "storage/src/main/java/org/apache/kafka/storage/internals/log/UnifiedLog.java",
+      "start_line": 1950,
+      "end_line": 2009,
+      "score": 0.6939622802714512
+    },
+    {
+      "n": 11,
+      "file_path": "storage/src/main/java/org/apache/kafka/storage/internals/log/LogSegment.java",
+      "start_line": 769,
+      "end_line": 828,
+      "score": 0.6938316797421981
+    }
+  ]
+}

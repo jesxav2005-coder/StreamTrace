@@ -1,0 +1,43 @@
+{
+  "id": "q10",
+  "status": 200,
+  "question": "What is the monthly cost of running a three-broker Kafka cluster on AWS?",
+  "wanted": 0,
+  "found": 0,
+  "missing": [],
+  "invalid_citations": [],
+  "plan": [
+    "What is the monthly cost of running a three-broker Kafka cluster on AWS?"
+  ],
+  "answer": "The provided code excerpts do not contain any information about the monthly cost of running a Kafka cluster on AWS. The excerpts detail internal components, configurations, and metrics of Kafka brokers, but they do not cover pricing, cloud providers, or operational costs.",
+  "sources": [
+    {
+      "n": 1,
+      "file_path": "core/src/main/scala/kafka/server/KafkaBroker.scala",
+      "start_line": 17,
+      "end_line": 76,
+      "score": 0.6237490154800386
+    },
+    {
+      "n": 2,
+      "file_path": "core/src/main/scala/kafka/server/KafkaBroker.scala",
+      "start_line": 67,
+      "end_line": 124,
+      "score": 0.6176800438594495
+    },
+    {
+      "n": 3,
+      "file_path": "storage/src/main/java/org/apache/kafka/server/log/remote/quota/RLMQuotaManagerConfig.java",
+      "start_line": 17,
+      "end_line": 28,
+      "score": 0.5889593449245323
+    },
+    {
+      "n": 4,
+      "file_path": "core/src/main/scala/kafka/server/KafkaConfig.scala",
+      "start_line": 17,
+      "end_line": 70,
+      "score": 0.5858850426216694
+    }
+  ]
+}

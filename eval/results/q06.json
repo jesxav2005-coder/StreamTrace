@@ -1,0 +1,94 @@
+{
+  "id": "q06",
+  "status": 200,
+  "question": "What happens when a partition leader fails, and how is a new leader chosen through KRaft?",
+  "wanted": 7,
+  "found": 1,
+  "missing": [
+    "BrokerMetadataPublisher.scala",
+    "KafkaRaftClient.java",
+    "PartitionChangeBuilder.java",
+    "QuorumController.java",
+    "ReplicaManager.scala",
+    "ReplicationControlManager.java"
+  ],
+  "invalid_citations": [],
+  "plan": [
+    "How is a KRaft broker (acting as a partition follower) configured to detect the failure or unreachability of the current partition leader?",
+    "What is the process, within the KRaft controller, for initiating and completing a leader election for a partition after a failure is detected?",
+    "Once a new partition leader is chosen by the KRaft controller, how does it transition to the active leader state and begin handling client requests?"
+  ],
+  "answer": "Here's what happens when a partition leader fails and how a new leader is chosen through KRaft:\n\n1.  When a partition leader broker fails, it stops sending `BrokerHeartbeatRequest` messages to the controller. [6]\n2.  The `ControllerServer`, which runs in KRaft mode and hosts the `QuorumController`, relies on a KRaft quorum for maintaining cluster metadata. [3], [7] The `QuorumController` detects the missing heartbeats. [6]\n3.  The KRaft quorum uses the Raft protocol to manage cluster metadata. This includes handling `Vote`, `BeginQuorumEpoch`, `EndQuorumEpoch`, and `DescribeQuorum` requests, which are part of the Raft election process for the controller itself. [5]\n4.  If the failed broker was also the controller leader, a new controller leader is elected among the KRaft quorum members. The Kafka Raft Manager (`KafkaRaftManager`) and its `KafkaRaftClient` implement the Raft protocol for this purpose. [3], [4], [7]\n5.  Once there is a stable controller leader, it is responsible for electing new partition leaders. The controller handles `ElectLeaders` requests to determine which replica should become the new leader for the affected partitions. [5]\n6.  After a new leader is chosen, the new leader broker updates its internal state. It marks the partition as `RECOVERED` if it was previously `RECOVERING`. It then calls `updateAssignmentAndIsr` to update the partition's replicas, ISR, adding/removing replicas, and leader recovery state. [8]\n7.  The new leader also assigns a new `leader epoch` and its `leaderEpochStartOffset` based on its `logEndOffset`, ensuring followers can synchronize correctly. [8]\n8.  Follower `ReplicaFetcherThread`s, which previously fetched from the failed leader, will update their state to fetch from the newly elected leader. [1]\n9.  Components like the `TransactionCoordinator` react to the leadership change by calling `onElection` for partitions they are now leading, loading the relevant transaction state. [9]\n\nThe provided excerpts do not explicitly detail the exact algorithm the `QuorumController` uses to choose a new partition leader (e.g., specific criteria like ISR, replica lag, or preference). They also don't fully explain the internal mechanics of the Raft protocol beyond showing the presence of Raft-related API calls.",
+  "sources": [
+    {
+      "n": 1,
+      "file_path": "core/src/main/scala/kafka/server/ReplicaFetcherThread.scala",
+      "start_line": 17,
+      "end_line": 70,
+      "score": 0.6704889000098205
+    },
+    {
+      "n": 2,
+      "file_path": "core/src/main/scala/kafka/server/KafkaBroker.scala",
+      "start_line": 17,
+      "end_line": 76,
+      "score": 0.6593014935274477
+    },
+    {
+      "n": 3,
+      "file_path": "core/src/main/scala/kafka/server/KafkaRaftServer.scala",
+      "start_line": 17,
+      "end_line": 75,
+      "score": 0.6534652260793447
+    },
+    {
+      "n": 4,
+      "file_path": "core/src/main/scala/kafka/raft/KafkaRaftManager.scala",
+      "start_line": 17,
+      "end_line": 74,
+      "score": 0.6516683457239462
+    },
+    {
+      "n": 5,
+      "file_path": "core/src/main/scala/kafka/server/ControllerApis.scala",
+      "start_line": 538,
+      "end_line": 595,
+      "score": 0.6541660075284947
+    },
+    {
+      "n": 6,
+      "file_path": "core/src/main/scala/kafka/server/ControllerApis.scala",
+      "start_line": 586,
+      "end_line": 644,
+      "score": 0.6517416848515319
+    },
+    {
+      "n": 7,
+      "file_path": "core/src/main/scala/kafka/server/ControllerServer.scala",
+      "start_line": 17,
+      "end_line": 75,
+      "score": 0.6482044030324363
+    },
+    {
+      "n": 8,
+      "file_path": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "start_line": 610,
+      "end_line": 663,
+      "score": 0.6754365335463757
+    },
+    {
+      "n": 9,
+      "file_path": "core/src/main/scala/kafka/coordinator/transaction/TransactionCoordinator.scala",
+      "start_line": 450,
+      "end_line": 507,
+      "score": 0.6627740241259822
+    },
+    {
+      "n": 10,
+      "file_path": "core/src/main/java/kafka/server/TierStateMachine.java",
+      "start_line": 17,
+      "end_line": 73,
+      "score": 0.6522926986671073
+    }
+  ]
+}

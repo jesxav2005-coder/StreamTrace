@@ -1,0 +1,6 @@
+{
+  "id": "q09",
+  "status": 429,
+  "question": "When does a follower get removed from the in-sync replica set, and which code decides it?",
+  "error": "Embedding quota used up. Try again later."
+}

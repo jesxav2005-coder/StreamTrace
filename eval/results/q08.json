@@ -1,0 +1,101 @@
+{
+  "id": "q08",
+  "status": 200,
+  "question": "Where are consumer offset commits handled, and where are they stored?",
+  "wanted": 7,
+  "found": 1,
+  "missing": [
+    "ConsumerCoordinator.java",
+    "CoordinatorPartitionWriter.scala",
+    "CoordinatorRuntime.java",
+    "GroupCoordinatorService.java",
+    "GroupCoordinatorShard.java",
+    "OffsetMetadataManager.java"
+  ],
+  "invalid_citations": [],
+  "plan": [
+    "How are consumer `OffsetCommitRequest`s handled by the broker?",
+    "Which internal topic is used to store consumer offsets?",
+    "How are records written to and persisted in the `__consumer_offsets` topic?"
+  ],
+  "answer": "Here's how consumer offset commits are handled and stored in Apache Kafka:\n\n1.  Consumer offset commit requests are initially received and processed by the `handleOffsetCommitRequest` method within the `KafkaApis` class. [1]\n2.  Within `handleOffsetCommitRequest`, checks are performed for authorization to the consumer group and the specified topics. [1], [2]\n3.  After these initial checks, the request to commit offsets is delegated to the `groupCoordinator`, which handles the actual commitment logic by calling `groupCoordinator.commitOffsets()`. [3]\n4.  For transactional offset commits, a separate method, `handleTxnOffsetCommitRequest`, processes the request and interacts with the `txnCoordinator`. [4]\n5.  Consumer offsets are stored in an internal Kafka topic named `GROUP_METADATA_TOPIC_NAME`. This internal topic is imported and referenced by the `KafkaApis` class, indicating its role in storing group metadata. [6]\n6.  For transactional offset commits, the state related to these commits (e.g., for a specific `transactionalId` and `offsetTopicPartition`) is managed by the `txnCoordinator` [4] and is stored in the `TRANSACTION_STATE_TOPIC_NAME`. [6]",
+  "sources": [
+    {
+      "n": 1,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 258,
+      "end_line": 306,
+      "score": 0.741521535321884
+    },
+    {
+      "n": 2,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 297,
+      "end_line": 355,
+      "score": 0.7398639679333123
+    },
+    {
+      "n": 3,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 346,
+      "end_line": 403,
+      "score": 0.732113914482607
+    },
+    {
+      "n": 4,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 2031,
+      "end_line": 2086,
+      "score": 0.7140442108568776
+    },
+    {
+      "n": 5,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 812,
+      "end_line": 871,
+      "score": 0.6400232726130219
+    },
+    {
+      "n": 6,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 17,
+      "end_line": 76,
+      "score": 0.6380846032389935
+    },
+    {
+      "n": 7,
+      "file_path": "core/src/main/java/kafka/server/share/ShareCoordinatorMetadataCacheHelperImpl.java",
+      "start_line": 17,
+      "end_line": 70,
+      "score": 0.6372068214773072
+    },
+    {
+      "n": 8,
+      "file_path": "core/src/main/java/kafka/server/TierStateMachine.java",
+      "start_line": 17,
+      "end_line": 73,
+      "score": 0.6293833116160588
+    },
+    {
+      "n": 9,
+      "file_path": "core/src/main/java/kafka/server/share/SharePartition.java",
+      "start_line": 3596,
+      "end_line": 3651,
+      "score": 0.6717375799897648
+    },
+    {
+      "n": 10,
+      "file_path": "core/src/main/java/kafka/server/share/SharePartition.java",
+      "start_line": 2858,
+      "end_line": 2916,
+      "score": 0.6689676222094034
+    },
+    {
+      "n": 11,
+      "file_path": "storage/src/main/java/org/apache/kafka/server/log/remote/metadata/storage/ConsumerTask.java",
+      "start_line": 17,
+      "end_line": 75,
+      "score": 0.6630789639943659
+    }
+  ]
+}

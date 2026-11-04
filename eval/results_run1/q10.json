@@ -1,0 +1,6 @@
+{
+  "id": "q10",
+  "status": 429,
+  "question": "What is the monthly cost of running a three-broker Kafka cluster on AWS?",
+  "error": "Embedding quota used up. Try again later."
+}

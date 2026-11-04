@@ -1,0 +1,6 @@
+{
+  "id": "q03",
+  "status": 429,
+  "question": "Where is log retention enforced, and what decides which segment gets deleted?",
+  "error": "Embedding quota used up. Try again later."
+}

@@ -1,0 +1,6 @@
+{
+  "id": "q05",
+  "status": 429,
+  "question": "How is a consumer fetch request served, from the request arriving at the broker to the response leaving?",
+  "error": "Embedding quota used up. Try again later."
+}

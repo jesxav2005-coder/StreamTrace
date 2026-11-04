@@ -1,0 +1,6 @@
+{
+  "id": "q08",
+  "status": 429,
+  "question": "Where are consumer offset commits handled, and where are they stored?",
+  "error": "Embedding quota used up. Try again later."
+}

@@ -1,0 +1,78 @@
+{
+  "id": "q09",
+  "status": 200,
+  "question": "When does a follower get removed from the in-sync replica set, and which code decides it?",
+  "wanted": 5,
+  "found": 2,
+  "missing": [
+    "DefaultAlterPartitionManager.java",
+    "ReplicaState.java",
+    "ReplicationControlManager.java"
+  ],
+  "invalid_citations": [],
+  "plan": [
+    "How does the leader track the health and liveness of followers?",
+    "What configuration parameter defines the timeout for removing a follower from the ISR?",
+    "Which component or method is responsible for evaluating follower status and initiating ISR updates?",
+    "How is the ISR actually updated on the leader when a follower is removed?"
+  ],
+  "answer": "A follower is removed from the in-sync replica set (ISR) when it is deemed \"out of sync\" with the leader. This decision is made by the partition leader.\n\nHere's a step-by-step breakdown of how it's determined:\n\n1.  **Check for ISR Shrink Necessity**: The `maybeShrinkIsr()` method is called to check if an update to the ISR is needed. [7]\n2.  **Identify Out-of-Sync Replicas**: This method calls `needsShrinkIsr()`, which in turn relies on `getOutOfSyncReplicas(replicaLagTimeMaxMs)` to find followers that are not keeping up. If `getOutOfSyncReplicas` returns a non-empty set, then a shrink is needed. [4, 7]\n3.  **Criteria for Being Out-of-Sync**: A follower is considered out-of-sync if:\n    *   Its log end offset (LEO) has not been updated for `maxLagMs` milliseconds (stuck follower).\n    *   It has not caught up to the leader's LEO within the last `maxLagMs` milliseconds (slow follower).\n    *   These conditions are checked by evaluating the `lastCaughtUpTimeMs` of the replica, which represents the last time the replica was fully caught up. [4]\n4.  **How Out-of-Sync Status is Determined**: The `getOutOfSyncReplicas` method filters candidate replica IDs (all ISR members except the local leader) using `isFollowerOutOfSync`. This function checks if `followerReplica.stateSnapshot.isCaughtUp(leaderEndOffset, currentTimeMs, maxLagMs)` returns `false`. [4]\n5.  **Preparation and Submission of Change**: If out-of-sync replicas are found, the `prepareIsrShrink` method is called to construct the new ISR (excluding the identified out-of-sync replicas). This change is then submitted using `submitAlterPartition`, indicating an update to the partition's metadata. [7]\n\nThe code that decides this removal is primarily within the `Partition` class, specifically the `maybeShrinkIsr()` method and its helper functions like `needsShrinkIsr()` and `getOutOfSyncReplicas()`. [4, 7]",
+  "sources": [
+    {
+      "n": 1,
+      "file_path": "core/src/main/scala/kafka/server/ReplicaManager.scala",
+      "start_line": 2388,
+      "end_line": 2442,
+      "score": 0.5788292511876681
+    },
+    {
+      "n": 2,
+      "file_path": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "start_line": 1020,
+      "end_line": 1076,
+      "score": 0.5769151444111201
+    },
+    {
+      "n": 3,
+      "file_path": "core/src/main/scala/kafka/server/ReplicaManager.scala",
+      "start_line": 2433,
+      "end_line": 2483,
+      "score": 0.5766713233569688
+    },
+    {
+      "n": 4,
+      "file_path": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "start_line": 1117,
+      "end_line": 1169,
+      "score": 0.575126534084337
+    },
+    {
+      "n": 5,
+      "file_path": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "start_line": 888,
+      "end_line": 940,
+      "score": 0.6900247660818586
+    },
+    {
+      "n": 6,
+      "file_path": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "start_line": 791,
+      "end_line": 847,
+      "score": 0.6739962640389997
+    },
+    {
+      "n": 7,
+      "file_path": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "start_line": 1067,
+      "end_line": 1126,
+      "score": 0.6739122454131622
+    },
+    {
+      "n": 8,
+      "file_path": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "start_line": 838,
+      "end_line": 897,
+      "score": 0.6943215646172909
+    }
+  ]
+}

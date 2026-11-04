@@ -1,0 +1,6 @@
+{
+  "id": "q07",
+  "status": 429,
+  "question": "How does the broker detect and drop duplicate records from an idempotent producer?",
+  "error": "Embedding quota used up. Try again later."
+}

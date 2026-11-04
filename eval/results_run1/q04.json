@@ -1,0 +1,6 @@
+{
+  "id": "q04",
+  "status": 429,
+  "question": "How does the producer client batch records and decide when to send them (batch size and linger time)?",
+  "error": "Embedding quota used up. Try again later."
+}

@@ -1,0 +1,6 @@
+{
+  "id": "q06",
+  "status": 429,
+  "question": "What happens when a partition leader fails, and how is a new leader chosen through KRaft?",
+  "error": "Embedding quota used up. Try again later."
+}

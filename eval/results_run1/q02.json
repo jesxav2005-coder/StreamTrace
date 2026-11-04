@@ -1,0 +1,6 @@
+{
+  "id": "q02",
+  "status": 429,
+  "question": "Which code path triggers a consumer group rebalance when a member stops sending heartbeats?",
+  "error": "Embedding quota used up. Try again later."
+}

@@ -1,0 +1,98 @@
+{
+  "id": "q02",
+  "status": 200,
+  "question": "Which code path triggers a consumer group rebalance when a member stops sending heartbeats?",
+  "wanted": 3,
+  "found": 1,
+  "missing": [
+    "GroupCoordinatorService.java",
+    "GroupMetadataManager.java"
+  ],
+  "invalid_citations": [],
+  "plan": [
+    "How are consumer heartbeats sent by the client?",
+    "Where does the group coordinator process incoming heartbeats and update member state?",
+    "Which component monitors member heartbeats for timeouts?",
+    "How does the group coordinator trigger a rebalance when a member's heartbeat times out?"
+  ],
+  "answer": "Here's the explanation of the code path based on the provided excerpts:\n\n1.  A `HeartbeatThread` within the client's `AbstractCoordinator` is responsible for continually sending heartbeats to the group coordinator. [2]\n2.  This `HeartbeatThread` checks if it's enabled and if the client is part of a group, then proceeds to perform client polling and determine if a heartbeat should be sent. [2]\n3.  The `AbstractCoordinator`'s `sendHeartbeatRequest()` method constructs a `HeartbeatRequest` which includes the `groupId`, `memberId`, `groupInstanceId`, and `generationId`. [4]\n4.  This `HeartbeatRequest` is then sent by the client to its assigned group coordinator on the Kafka broker. [4]\n5.  On the Kafka broker, the `KafkaApis` component receives and handles the `ConsumerGroupHeartbeatRequest`. [11]\n6.  After validating the request (e.g., checking if the consumer group protocol is enabled and for authorization), `KafkaApis` forwards the heartbeat data to the `groupCoordinator.consumerGroupHeartbeat()` method for processing. [11]\n\nThe provided code excerpts do not explicitly show the internal logic within the `groupCoordinator` (on the Kafka broker) that detects a missed heartbeat from a member and subsequently triggers a rebalance due to that missed heartbeat. The client-side `HeartbeatResponseHandler` in excerpt [4] only shows how the client reacts if a rebalance is *already in progress* (by calling `requestRejoin`), not how the rebalance is *initiated* by the coordinator due to a missing heartbeat.",
+  "sources": [
+    {
+      "n": 1,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/consumer/internals/ConsumerHeartbeatRequestManager.java",
+      "start_line": 17,
+      "end_line": 76,
+      "score": 0.6934249132971784
+    },
+    {
+      "n": 2,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/consumer/internals/AbstractCoordinator.java",
+      "start_line": 1460,
+      "end_line": 1512,
+      "score": 0.6908497825191203
+    },
+    {
+      "n": 3,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/consumer/internals/ShareHeartbeatRequestManager.java",
+      "start_line": 17,
+      "end_line": 74,
+      "score": 0.6841433923462473
+    },
+    {
+      "n": 4,
+      "file_path": "clients/src/main/java/org/apache/kafka/clients/consumer/internals/AbstractCoordinator.java",
+      "start_line": 1214,
+      "end_line": 1273,
+      "score": 0.6822422875349128
+    },
+    {
+      "n": 5,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 2850,
+      "end_line": 2909,
+      "score": 0.6763359402674284
+    },
+    {
+      "n": 6,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 3161,
+      "end_line": 3216,
+      "score": 0.6741986532109616
+    },
+    {
+      "n": 7,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 2808,
+      "end_line": 2859,
+      "score": 0.6724488159722202
+    },
+    {
+      "n": 8,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 1386,
+      "end_line": 1441,
+      "score": 0.6616532639583786
+    },
+    {
+      "n": 9,
+      "file_path": "core/src/main/scala/kafka/server/SharedServer.scala",
+      "start_line": 190,
+      "end_line": 245,
+      "score": 0.5910745004927519
+    },
+    {
+      "n": 10,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 1152,
+      "end_line": 1211,
+      "score": 0.64962692175693
+    },
+    {
+      "n": 11,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 2665,
+      "end_line": 2723,
+      "score": 0.6476242892859831
+    }
+  ]
+}

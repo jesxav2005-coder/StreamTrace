@@ -1,0 +1,106 @@
+{
+  "id": "q01",
+  "status": 200,
+  "question": "Trace what happens inside the broker when a producer sends a batch with acks=all.",
+  "wanted": 7,
+  "found": 5,
+  "missing": [
+    "DelayedProduce.java",
+    "Sender.java"
+  ],
+  "invalid_citations": [],
+  "plan": [
+    "How does the broker's socket server receive and dispatch a ProduceRequest?",
+    "Where is the ProduceRequest processed, validated, and prepared for writing to the log?",
+    "How are the records appended to the topic's log segment on the leader broker?",
+    "How does the leader broker track and wait for acknowledgements from all in-sync replicas (acks=all)?",
+    "How is the ProduceResponse constructed and sent back to the producer after successful replication?"
+  ],
+  "answer": "Here's a trace of what happens inside the broker when a producer sends a batch with `acks=all`, based on the provided code excerpts:\n\n1.  **Initial Request Handling and Validation:**\n    The broker receives the `ProduceRequest`, and the `KafkaApis.handleProduceRequest` function is invoked. It processes the topic and partition data from the request, resolving topic IDs and names. It then authorizes the write operation for the topics and validates the records within the request batch. If validation is successful, the records are collected into `authorizedRequestInfo`. Any partitions that are unauthorized, non-existent, or have invalid records will result in an error status that is prepared for the response. [1]\n\n2.  **Appending to the Leader's Local Log:**\n    If `authorizedRequestInfo` is not empty (i.e., there are valid records to append), the `replicaManager.handleProduceAppend` method is called. This method is passed the `ProduceRequest`'s `acks` value (which is `-1` for `acks=all`), the `entriesPerPartition` (containing the validated records), and a `responseCallback` to be invoked later. The `replicaManager` then calls `appendToLocalLog` to write these messages to the leader's local replica logs. [3, 11]\n\n3.  **Physical Write to Log Segments:**\n    The `appendToLocalLog` method (within `ReplicaManager`) calls `UnifiedLog.appendAsLeader` for each partition. This higher-level append logic then delegates the actual writing to `LocalLog.append`, which in turn calls `segments.activeSegment().append`. The `LogSegment.append` method writes the `MemoryRecords` (the message batch) to the physical log file. It also updates the maximum timestamp and offset recorded and, at configured intervals, appends corresponding entries to the offset and time indexes. During the `UnifiedLog.appendAsLeader` process, various validations (e.g., offset checks, batch size limits) are performed, the leader epoch cache is updated, and the log segment may be rolled over if it reaches its capacity. [6, 7, 8, 9]\n\n4.  **Delaying the Response for `acks=all`:**\n    After appending the messages to the leader's local log, `replicaManager` checks if a delayed produce request is required. Since `acks` is `-1` (meaning `acks=all`), there is data to append, and there are fewer errors than the total number of partitions, the condition for requiring a delayed response is met. The provided excerpts state that this implies a \"delayed produce request\" and waiting for replication to complete, but the specific mechanism for pausing this produce request and resuming it (e.g., through a dedicated purgatory for produce requests) is not detailed in the given code snippets. [11]\n\n5.  **Checking Replica Acknowledgment:**\n    To fulfill the `acks=all` requirement, the system calls `Partition.checkEnoughReplicasReachOffset`. This method is specifically designed for when `requiredAcks = -1` and the broker needs to wait for replicas to catch up. It examines the current `curMaximalIsr` (In-Sync Replicas) and their `logEndOffset` values. It determines if all replicas in the ISR have reached the `requiredOffset` (the offset of the messages appended to the leader) and also checks if the leader's `highWatermark` has advanced to or beyond this `requiredOffset`. If these conditions are met, the produce request can be acknowledged. [12]\n\n6.  **Sending the Produce Response:**\n    Once the `checkEnoughReplicasReachOffset` method confirms that the `acks=all` conditions are satisfied, the `sendResponseCallback` (which was passed to `handleProduceAppend` in Step 2) is executed. This callback consolidates all partition response statuses (including any initial errors from validation). If a `NOT_LEADER_OR_FOLLOWER` error occurred for a partition, it updates the response with the `currentLeader` information by calling `getCurrentLeader`. It also calculates any necessary throttling time due to bandwidth or request quotas. Since `produceRequest.acks` is not `0`, the final `ProduceResponse` is prepared and sent using `requestChannel.sendResponse`. [3, 5, 10]\n\n7.  **Network Transmission of the Response:**\n    The `SocketServer.sendResponse` method is responsible for the actual network transmission. It interacts with the `selector` to send a `NetworkSend` containing the `ProduceResponse` over the network connection back to the producer client. The response is also tracked in `inflightResponses`. [2]",
+  "sources": [
+    {
+      "n": 1,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 394,
+      "end_line": 453,
+      "score": 0.7037854655899227
+    },
+    {
+      "n": 2,
+      "file_path": "core/src/main/scala/kafka/network/SocketServer.scala",
+      "start_line": 922,
+      "end_line": 981,
+      "score": 0.6925379060823922
+    },
+    {
+      "n": 3,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 532,
+      "end_line": 588,
+      "score": 0.6917636212100965
+    },
+    {
+      "n": 4,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 346,
+      "end_line": 403,
+      "score": 0.685179704196267
+    },
+    {
+      "n": 5,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 444,
+      "end_line": 491,
+      "score": 0.686871573875992
+    },
+    {
+      "n": 6,
+      "file_path": "storage/src/main/java/org/apache/kafka/storage/internals/log/LogSegment.java",
+      "start_line": 249,
+      "end_line": 308,
+      "score": 0.7011336257695876
+    },
+    {
+      "n": 7,
+      "file_path": "storage/src/main/java/org/apache/kafka/storage/internals/log/UnifiedLog.java",
+      "start_line": 1017,
+      "end_line": 1072,
+      "score": 0.6800427611555017
+    },
+    {
+      "n": 8,
+      "file_path": "storage/src/main/java/org/apache/kafka/storage/internals/log/LocalLog.java",
+      "start_line": 567,
+      "end_line": 625,
+      "score": 0.6775844009650807
+    },
+    {
+      "n": 9,
+      "file_path": "storage/src/main/java/org/apache/kafka/storage/internals/log/UnifiedLog.java",
+      "start_line": 1201,
+      "end_line": 1260,
+      "score": 0.6756107322068633
+    },
+    {
+      "n": 10,
+      "file_path": "core/src/main/scala/kafka/server/KafkaApis.scala",
+      "start_line": 482,
+      "end_line": 541,
+      "score": 0.6625091491615264
+    },
+    {
+      "n": 11,
+      "file_path": "core/src/main/scala/kafka/server/ReplicaManager.scala",
+      "start_line": 1335,
+      "end_line": 1394,
+      "score": 0.6571633761565535
+    },
+    {
+      "n": 12,
+      "file_path": "core/src/main/scala/kafka/cluster/Partition.scala",
+      "start_line": 931,
+      "end_line": 986,
+      "score": 0.6531828644765093
+    }
+  ]
+}
